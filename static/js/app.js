@@ -43,10 +43,25 @@ function validateAddress() {
         validateBtn.disabled = false;
         validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         validateBtn.classList.add('hover:bg-green-600');
+        
+        // Enable analyze button
+        analyzeBtn.disabled = false;
+        analyzeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        analyzeBtn.classList.add('hover:from-blue-600', 'hover:to-purple-700');
+        
+        // Store current address
+        currentWalletAddress = address;
     } else {
         validateBtn.disabled = true;
         validateBtn.classList.add('opacity-50', 'cursor-not-allowed');
         validateBtn.classList.remove('hover:bg-green-600');
+        
+        // Disable analyze button
+        analyzeBtn.disabled = true;
+        analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        analyzeBtn.classList.remove('hover:from-blue-600', 'hover:to-purple-700');
+        
+        currentWalletAddress = null;
     }
 }
 
@@ -63,8 +78,10 @@ function confirmAddress() {
     walletAddressInput.parentElement.parentElement.classList.add('hidden');
     validateBtn.classList.add('hidden');
     
-    // Show analysis button
-    analyzeBtn.classList.remove('hidden');
+    // Enable analyze button
+    analyzeBtn.disabled = false;
+    analyzeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    analyzeBtn.classList.add('hover:from-blue-600', 'hover:to-purple-700');
 }
 
 // Change address
@@ -82,8 +99,10 @@ function changeAddress() {
     walletAddressInput.value = '';
     validateAddress();
     
-    // Hide analysis button
-    analyzeBtn.classList.add('hidden');
+    // Disable analyze button
+    analyzeBtn.disabled = true;
+    analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    analyzeBtn.classList.remove('hover:from-blue-600', 'hover:to-purple-700');
     
     // Hide results
     resultsDiv.classList.add('hidden');
@@ -280,7 +299,4 @@ function displayResults(data) {
 document.addEventListener('DOMContentLoaded', function() {
     // Initial validation
     validateAddress();
-    
-    // Hide analysis button on startup
-    analyzeBtn.classList.add('hidden');
 });
