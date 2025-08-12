@@ -226,9 +226,6 @@ function showError(message) {
 function displayResults(data) {
     const resultsDiv = document.getElementById('results');
     const scoreValue = document.getElementById('score-value');
-    const totalValue = document.getElementById('total-value');
-    const tokenCount = document.getElementById('token-count');
-    const chainCount = document.getElementById('chain-count');
     const tokensByChain = document.getElementById('tokens-by-chain');
 
     // Display AI score
@@ -246,53 +243,103 @@ function displayResults(data) {
         scoreValue.className = 'text-3xl font-bold text-red-600';
     }
 
-    // Display statistics
-    totalValue.textContent = `$${data.total_value.toFixed(2)}`;
-    tokenCount.textContent = data.token_count;
+    // Generate AI insights and recommendations
+    const aiInsights = generateAIInsights(data, score);
     
-    // Count unique chains
-    const chains = [...new Set(data.tokens.map(token => token.chain))];
-    chainCount.textContent = chains.length;
-
-    // Group tokens by chain
-    const tokensByChainMap = {};
-    data.tokens.forEach(token => {
-        if (!tokensByChainMap[token.chain]) {
-            tokensByChainMap[token.chain] = [];
-        }
-        tokensByChainMap[token.chain].push(token);
-    });
-
-    // Display tokens by chain
-    tokensByChain.innerHTML = '';
-    Object.keys(tokensByChainMap).forEach(chain => {
-        const chainTokens = tokensByChainMap[chain];
-        const chainValue = chainTokens.reduce((sum, token) => sum + token.usd, 0);
+    // Display AI insights instead of token details
+    tokensByChain.innerHTML = `
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-6">
+            <h4 class="text-xl font-semibold text-gray-800 mb-4">
+                <i class="fas fa-brain mr-2 text-purple-600"></i>
+                AI Portfolio Analysis
+            </h4>
+            <p class="text-gray-700 mb-4">${aiInsights.analysis}</p>
+        </div>
         
-        const chainDiv = document.createElement('div');
-        chainDiv.className = 'bg-gray-50 rounded-lg p-4';
-        chainDiv.innerHTML = `
-            <h4 class="text-lg font-semibold text-gray-800 mb-3">${chain} ($${chainValue.toFixed(2)})</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                ${chainTokens.map(token => `
-                    <div class="bg-white rounded-lg p-3 border border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <div class="font-semibold text-gray-800">${token.sym}</div>
-                                <div class="text-sm text-gray-600">$${token.usd.toFixed(2)}</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xs text-gray-500">${token.addr.substring(0, 8)}...</div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="bg-green-50 rounded-lg p-6">
+            <h4 class="text-lg font-semibold text-green-800 mb-4">
+                <i class="fas fa-lightbulb mr-2 text-green-600"></i>
+                AI Recommendations
+            </h4>
+            <ul class="space-y-3">
+                ${aiInsights.recommendations.map(rec => `
+                    <li class="flex items-start">
+                        <i class="fas fa-arrow-right text-green-600 mt-1 mr-3 flex-shrink-0"></i>
+                        <span class="text-green-700">${rec}</span>
+                    </li>
                 `).join('')}
-            </div>
-        `;
-        tokensByChain.appendChild(chainDiv);
-    });
+            </ul>
+        </div>
+    `;
 
     resultsDiv.classList.remove('hidden');
+}
+
+// Generate AI insights based on portfolio data
+function generateAIInsights(data, score) {
+    const totalValue = data.total_value;
+    const tokenCount = data.token_count;
+    const chains = [...new Set(data.tokens.map(token => token.chain))];
+    
+    // Analyze portfolio composition
+    const stableTokens = data.tokens.filter(token => 
+        ['USDC', 'USDT', 'DAI', 'ETH', 'WETH', 'WBTC'].includes(token.sym.toUpperCase())
+    );
+    const stableValue = stableTokens.reduce((sum, token) => sum + token.usd, 0);
+    const stablePercentage = (stableValue / totalValue) * 100;
+    
+    // Analyze diversification
+    const highValueTokens = data.tokens.filter(token => token.usd > totalValue * 0.1);
+    const isConcentrated = highValueTokens.length > 0;
+    
+    // Generate analysis
+    let analysis = "";
+    if (score >= 80) {
+        analysis = "🤖 Excellent portfolio stability detected! Your AI analysis shows a well-balanced portfolio with strong diversification and risk management. The combination of stable assets and strategic token selection demonstrates sophisticated portfolio construction.";
+    } else if (score >= 60) {
+        analysis = "🤖 Good portfolio foundation with room for optimization. Our AI analysis indicates moderate stability with some areas for improvement. The portfolio shows basic diversification but could benefit from enhanced risk management strategies.";
+    } else if (score >= 40) {
+        analysis = "🤖 Moderate portfolio risk detected. AI analysis reveals several areas requiring attention for improved stability. The current composition suggests higher volatility exposure that could be mitigated through strategic rebalancing.";
+    } else {
+        analysis = "🤖 High portfolio volatility detected. Our AI analysis indicates significant risk exposure requiring immediate attention. The current composition suggests aggressive positioning that may benefit from defensive strategies.";
+    }
+    
+    // Generate recommendations
+    const recommendations = [];
+    
+    if (stablePercentage < 30) {
+        recommendations.push("Increase stablecoin allocation to at least 30% for better risk management during market volatility");
+    }
+    
+    if (isConcentrated) {
+        recommendations.push("Reduce concentration in high-value positions to improve diversification and minimize single-token risk");
+    }
+    
+    if (tokenCount < 10) {
+        recommendations.push("Consider adding more diverse tokens across different sectors to enhance portfolio resilience");
+    }
+    
+    if (chains.length < 3) {
+        recommendations.push("Expand across more blockchain networks to reduce platform-specific risks and capture cross-chain opportunities");
+    }
+    
+    if (score < 60) {
+        recommendations.push("Implement a more conservative allocation strategy focusing on established projects with proven track records");
+    }
+    
+    // Add general recommendations if not enough specific ones
+    if (recommendations.length < 2) {
+        if (score < 70) {
+            recommendations.push("Consider rebalancing quarterly to maintain optimal risk-adjusted returns");
+        }
+        recommendations.push("Monitor portfolio performance regularly and adjust strategy based on market conditions");
+    }
+    
+    // Limit to 3 recommendations
+    return {
+        analysis: analysis,
+        recommendations: recommendations.slice(0, 3)
+    };
 }
 
 // Initialization
